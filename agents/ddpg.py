@@ -99,39 +99,56 @@ class Agent(object):
             t_step (int) : total_step count
             update_every (int) : update model once in every n steps
         """
+
+        self.update_local_critic(experiences=experiences, gamma=gamma)
+
+        self.update_local_actor(experiences)
+
+        if self.t_step % self.update_every == 0:
+            # ----------------------- update target networks ----------------------- #
+            self.soft_update(self.critic_local, self.critic_target, self.config["TAU"])
+            self.soft_update(self.actor_local, self.actor_target, self.config["TAU"])
+
+    def update_local_critic(self, experiences, gamma):
         states, actions, rewards, next_states, dones = experiences
 
         # ---------------------------- update critic ---------------------------- #
         # Get predicted next-state actions and Q values from target models
         actions_next = self.actor_target(next_states)
         Q_targets_next = self.critic_target(next_states, actions_next)
+
         # Compute Q targets for current states (y_i)
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+
         # Compute critic loss
         Q_expected = self.critic_local(states, actions)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
+
         # Minimize the loss
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
+
         # Clip gradients of critic
         torch.nn.utils.clip_grad_norm_(self.critic_local.parameters(), 1)
+
+        # Apply Changes
         self.critic_optimizer.step()
 
-        # ---------------------------- update actor ---------------------------- #
+    def update_local_actor(self, experiences):
+        states, actions, rewards, next_states, dones = experiences
         # Compute actor loss
         actions_pred = self.actor_local(states)
         actor_loss = -self.critic_local(states, actions_pred).mean()
+
         # Minimize the loss
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
+
         # Clip gradients of actor
         # torch.nn.utils.clip_grad_norm_(self.actor_local.parameters(), 1)
-        self.actor_optimizer.step()
 
-        if self.t_step % self.update_every == 0:
-            # ----------------------- update target networks ----------------------- #
-            self.soft_update(self.critic_local, self.critic_target, self.config["TAU"])
-            self.soft_update(self.actor_local, self.actor_target, self.config["TAU"])
+        # Apply Changes
+        self.actor_optimizer.step()
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.

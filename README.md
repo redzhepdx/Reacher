@@ -17,7 +17,25 @@ The observation space consists of 33 variables corresponding to position, rotati
 ### Setup
 The project uses Jupyter Notebook. This command needs to be run to install the needed packages:
 ```
-!pip -q install ./python
+pip install -r requirements.txt
+```
+
+### Training an Agent
+- The last kernel trains in `Reacher.ipynb` notebook trains agent until it reaches the target score. It is mandatory to run all previous kernels to load environment and instantiate a DDPG agent.
+- Optional : You can change the learning algorithm's hyper-parameters by updating the config dictionary in the notebook
+
+#### Initial Config
+```
+config = {
+    "BUFFER_SIZE" : int(1e6), # replay buffer size
+    "BATCH_SIZE" : 512,       # minibatch size
+    "GAMMA" : 0.99,           # discount factor
+    "TAU" : 1e-3,             # for soft update of target parameters
+    "LR_ACTOR" : 1e-4,        # learning rate of the actor 
+    "LR_CRITIC" : 2e-4,       # learning rate of the critic
+    "WEIGHT_DECAY" : 0,       # L2 weight decay
+    "UPDATE_EVERY" : 3        # Soft Update Rate
+}
 ```
 
 ### Project Structure and Instructions
